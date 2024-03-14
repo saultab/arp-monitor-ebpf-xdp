@@ -16,7 +16,7 @@ struct
 } rb SEC(".maps");
 
 SEC("xdp")
-int xdp_prog(struct __sk_buff *ctx)
+int xdp_prog(struct xdp_md *ctx)
 {
 	/* Retrieve pointers to the begin and end of the packet buffer */
 	void *data_end = (void *)(long)ctx->data_end;

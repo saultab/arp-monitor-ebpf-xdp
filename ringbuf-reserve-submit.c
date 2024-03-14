@@ -110,8 +110,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	struct bpf_xdp_attach_opts opts = {}; // Opzioni per l'attaccamento del programma BPF
-	int err = bpf_xdp_attach(ifindex, bpf_program__fd(skel->progs.xdp_prog), XDP_FLAGS_DRV_MODE, &opts);
+	int err = bpf_xdp_attach(ifindex, bpf_program__fd(skel->progs.xdp_prog), 0, 0);
 	if (err)
 	{
 		fprintf(stderr, "Failed to attach XDP program: %s\n",
@@ -153,7 +152,7 @@ int main(int argc, char **argv)
 
 cleanup:
 	/* Detach xdp program */
-	bpf_xdp_detach(ifindex, XDP_FLAGS_DRV_MODE, &opts);
+	bpf_xdp_detach(ifindex, 0, 0);
 
 	/* Free resources */
 	ring_buffer__free(rb);
