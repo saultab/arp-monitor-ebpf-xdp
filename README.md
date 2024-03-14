@@ -31,6 +31,11 @@ make
 sudo make install
 ```
 
+Disable large-receive-offload:
+```sh
+sudo ethtool -K <ifname> lro off
+```
+
 Build and run the arp monitor:
 ```sh
 make
