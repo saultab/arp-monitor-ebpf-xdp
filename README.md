@@ -14,7 +14,7 @@ Install pre-requirements on Fedora:
 ```sh
 sudo dnf update
 sudo dnf install clang llvm
-sudo dnf install elfutils-libelf-devel libpcap-devel perf glibc-devel.i686
+sudo dnf install elfutils-libelf-devel perf glibc-devel.i686
 ```
 
 Init libbpf and bpftool submodules:
