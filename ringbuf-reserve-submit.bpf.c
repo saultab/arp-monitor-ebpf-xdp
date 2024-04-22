@@ -60,32 +60,12 @@ int xdp_prog(struct xdp_md *ctx)
 			return XDP_PASS;
 		}
 
-		/* Copy fields from packet to the event struct */
-		e->ar_op = bpf_ntohs(arp->ar_op);
-
-		e->ar_sha[0] = arp->ar_sha[0];
-		e->ar_sha[1] = arp->ar_sha[1];
-		e->ar_sha[2] = arp->ar_sha[2];
-		e->ar_sha[3] = arp->ar_sha[3];
-		e->ar_sha[4] = arp->ar_sha[4];
-		e->ar_sha[5] = arp->ar_sha[5];
-
-		e->ar_sip[0] = arp->ar_sip[0];
-		e->ar_sip[1] = arp->ar_sip[1];
-		e->ar_sip[2] = arp->ar_sip[2];
-		e->ar_sip[3] = arp->ar_sip[3];
-
-		e->ar_tha[0] = arp->ar_tha[0];
-		e->ar_tha[1] = arp->ar_tha[1];
-		e->ar_tha[2] = arp->ar_tha[2];
-		e->ar_tha[3] = arp->ar_tha[3];
-		e->ar_tha[4] = arp->ar_tha[4];
-		e->ar_tha[5] = arp->ar_tha[5];
-
-		e->ar_tip[0] = arp->ar_tip[0];
-		e->ar_tip[1] = arp->ar_tip[1];
-		e->ar_tip[2] = arp->ar_tip[2];
-		e->ar_tip[3] = arp->ar_tip[3];
+        /* Copy fields from packet to the event struct */
+        e->ar_op = bpf_ntohs(arp->ar_op);
+        memcpy(e->ar_sha, arp->ar_sha, sizeof(e->ar_sha));
+        memcpy(e->ar_sip, arp->ar_sip, sizeof(e->ar_sip));
+        memcpy(e->ar_tha, arp->ar_tha, sizeof(e->ar_tha));
+        memcpy(e->ar_tip, arp->ar_tip, sizeof(e->ar_tip));
 
 		/* Submit the packet to the ring buffer */
 		bpf_ringbuf_submit(e, 0);

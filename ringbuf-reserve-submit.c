@@ -65,12 +65,12 @@ int handle_event(void *ctx, void *data, size_t data_sz)
 	tm = localtime(&t);
 	strftime(ts, sizeof(ts), "%H:%M:%S", tm);
 
-	printf("%-8s\t", ts);
-	printf("%s\t\t", opcode_to_text(e->ar_op));
-	printf("%02x:%02x:%02x:%02x:%02x:%02x\t", e->ar_sha[0], e->ar_sha[1], e->ar_sha[2], e->ar_sha[3], e->ar_sha[4], e->ar_sha[5]);
-	printf("%03u.%03u.%03u.%03u\t\t", e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3]);
-	printf("%02x:%02x:%02x:%02x:%02x:%02x\t", e->ar_tha[0], e->ar_tha[1], e->ar_tha[2], e->ar_tha[3], e->ar_tha[4], e->ar_tha[5]);
-	printf("%03u.%03u.%03u.%03u\n", e->ar_tip[0], e->ar_tip[1], e->ar_tip[2], e->ar_tip[3]);
+    printf("%-8s\t", ts);
+    printf("%s\t\t", opcode_to_text(e->ar_op));
+    printf("%02x:%02x:%02x:%02x:%02x:%02x\t", e->ar_sha[0], e->ar_sha[1], e->ar_sha[2], e->ar_sha[3], e->ar_sha[4], e->ar_sha[5]);
+    printf("%d.%d.%d.%d\t\t", e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3]);
+    printf("%02x:%02x:%02x:%02x:%02x:%02x\t", e->ar_tha[0], e->ar_tha[1], e->ar_tha[2], e->ar_tha[3], e->ar_tha[4], e->ar_tha[5]);
+    printf("%d.%d.%d.%d\n", e->ar_tip[0], e->ar_tip[1], e->ar_tip[2], e->ar_tip[3]);
 
 	return 0;
 }
@@ -130,9 +130,9 @@ int main(int argc, char **argv)
 
 	printf("Successfully started! Please Ctrl+C to stop.\n");
 
-	/* Process events */
-	printf("%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n",
-		   "TIME", "TYPE", "SENDER MAC", "SENDER IP", "TARGET MAC", "TARGET IP");
+    /* Process events */
+    printf("%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n",
+           "TIME", "TYPE", "SENDER MAC", "SENDER IP", "TARGET MAC", "TARGET IP");
 
 	while (!exiting)
 	{

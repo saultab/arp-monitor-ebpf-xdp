@@ -1,13 +1,20 @@
-# arp-sniffer-ebpf-xdp
+# arp-monitoring-ebpf-xdp
 
 Program for the arp monitoring with eBPF using XDP like hook point
 
 ## Building
 
-Install pre-requirements:
+Install pre-requirements on Ubuntu:
 ```sh
 sudo apt update
 sudo apt install -y clang libelf-dev zlib1g-dev gcc-multilib
+```
+
+Install pre-requirements on Fedora:
+```sh
+sudo dnf update
+sudo dnf install clang llvm
+sudo dnf install elfutils-libelf-devel libpcap-devel perf glibc-devel.i686
 ```
 
 Init libbpf and bpftool submodules:
