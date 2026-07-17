@@ -1,24 +1,53 @@
 # Stage 1: Building
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:24.04 AS builder
 
-RUN apt-get update && \
-    apt-get install -y clang libelf-dev zlib1g-dev gcc-multilib make pkg-config llvm git ethtool
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang \
+    llvm \
+    libelf-dev \
+    zlib1g-dev \
+    libbpf-dev \
+    linux-tools-common \
+    linux-tools-generic \
+    make \
+    gcc \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/app
-RUN git clone https://github.com/saultab/arp-monitor-ebpf-xdp.git
+# The bpftool wrapper uses uname -r which won't match the Docker host kernel.
+# Locate the real binary and symlink it to bypass the wrapper.
+RUN REAL_BPFTOOL=$(find /usr/lib/linux-tools-* -name bpftool -type f 2>/dev/null | head -1) \
+    && echo "Found bpftool at: $REAL_BPFTOOL" \
+    && ln -sf "$REAL_BPFTOOL" /usr/local/bin/bpftool
 
-WORKDIR /usr/src/app/arp-monitor-ebpf-xdp
-RUN git submodule update --init --recursive
-RUN cd libbpf/src && make && make install && ldconfig /usr/lib64
-RUN cd bpftool/src && make && make install
-#RUN ethtool -K eth0 lro off
+WORKDIR /build
+COPY . .
+
+# Generate vmlinux.h from host BTF if available, otherwise use minimal fallback
+RUN mkdir -p .output && \
+    if bpftool btf dump file /sys/kernel/btf/vmlinux format c > .output/vmlinux.h 2>/dev/null; then \
+        echo "vmlinux.h generated from BTF"; \
+    else \
+        cp include/vmlinux_minimal.h .output/vmlinux.h && \
+        echo "Using minimal vmlinux.h fallback (no BTF available)"; \
+    fi
+
 RUN make
 
-# Stage 2: Runtime environment
-FROM ubuntu:22.04
+# Stage 2: Runtime
+FROM ubuntu:24.04
 
-COPY --from=builder /usr/src/app/arp-monitor-ebpf-xdp/ringbuf-reserve-submit /usr/local/bin/
-RUN apt-get update
-RUN apt-get install -y libelf-dev && ldconfig
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libelf1 \
+    libbpf1 \
+    && rm -rf /var/lib/apt/lists/*
 
-CMD ["ringbuf-reserve-submit", "eth0"]
+# Run as non-root where possible; eBPF attach requires
+# CAP_BPF + CAP_NET_ADMIN granted at container runtime.
+RUN useradd -r -s /usr/sbin/nologin arp-monitor
+USER arp-monitor
+
+COPY --from=builder /build/arp-monitor /usr/local/bin/arp-monitor
+
+ENTRYPOINT ["arp-monitor"]
+CMD ["-i", "eth0"]

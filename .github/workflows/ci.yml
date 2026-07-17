@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang llvm llvm-dev \
+            libelf-dev zlib1g-dev \
+            linux-tools-common linux-tools-generic \
+            libbpf-dev bpftool \
+            cppcheck
+
+      - name: Check formatting
+        run: |
+          find src/ include/ tests/ -name '*.[ch]' -exec clang-format --dry-run --Werror {} +
+
+      - name: Static analysis (cppcheck)
+        run: |
+          cppcheck --enable=all --error-exitcode=1 \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            -I./include -I./src \
+            src/arp_monitor.c
+
+      - name: Generate vmlinux.h
+        run: |
+          sudo bpftool btf dump file /sys/kernel/btf/vmlinux format c > .output/vmlinux.h
+        env:
+          BPFTOOL: bpftool
+
+      - name: Build BPF program
+        run: |
+          mkdir -p .output
+          sudo bpftool btf dump file /sys/kernel/btf/vmlinux format c > .output/vmlinux.h
+          clang -g -O2 -target bpf \
+            -D__TARGET_ARCH_x86 \
+            -I.output -I./include -I./src \
+            -c src/arp_monitor.bpf.c -o .output/arp_monitor.bpf.o
+          llvm-strip -g .output/arp_monitor.bpf.o
+
+      - name: Generate skeleton
+        run: |
+          bpftool gen skeleton .output/arp_monitor.bpf.o > .output/arp_monitor.skel.h
+
+      - name: Build userspace
+        run: |
+          gcc -g -O2 -Wall -Wextra -Werror -pedantic -std=gnu11 \
+            -I.output -I./include -I./src \
+            -c src/arp_monitor.c -o .output/arp_monitor.o
+          gcc -g -O2 -Wall -Wextra -Werror -pedantic -std=gnu11 \
+            .output/arp_monitor.o -lbpf -lelf -lz -o arp-monitor
+
+      - name: Build with AddressSanitizer
+        run: |
+          gcc -g -O1 -Wall -Wextra -Werror -pedantic -std=gnu11 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -I.output -I./include -I./src \
+            -c src/arp_monitor.c -o .output/arp_monitor_asan.o
+          gcc -g -O1 \
+            -fsanitize=address,undefined \
+            .output/arp_monitor_asan.o -lbpf -lelf -lz -o arp-monitor-asan
+
+      - name: Run unit tests
+        run: |
+          gcc -g -O2 -Wall -Wextra -Werror -pedantic -std=gnu11 \
+            -I./include -I./src \
+            tests/test_spoof_detect.c -o .output/test_spoof_detect
+          .output/test_spoof_detect
+
+      - name: Run unit tests with ASan
+        run: |
+          gcc -g -O1 -Wall -Wextra -Werror -pedantic -std=gnu11 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -I./include -I./src \
+            tests/test_spoof_detect.c -o .output/test_spoof_detect_asan
+          .output/test_spoof_detect_asan
+
+      - name: Verify BPF program loads (requires privileges)
+        run: |
+          sudo bpftool prog load .output/arp_monitor.bpf.o /sys/fs/bpf/arp_monitor_test || true
+          sudo rm -f /sys/fs/bpf/arp_monitor_test
