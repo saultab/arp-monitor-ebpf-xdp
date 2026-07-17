@@ -83,8 +83,7 @@ static int setup_signals(void)
 
 /* ── libbpf logging callback ────────────────────────────────────── */
 
-static int libbpf_print_fn(enum libbpf_print_level level,
-                           const char *format, va_list args)
+static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
     if (level == LIBBPF_DEBUG && !cfg.verbose)
         return 0;
@@ -96,28 +95,38 @@ static int libbpf_print_fn(enum libbpf_print_level level,
 static const char *opcode_str(uint16_t op)
 {
     switch (op) {
-    case 1: return "REQUEST";
-    case 2: return "REPLY";
-    case 3: return "RARP_REQUEST";
-    case 4: return "RARP_REPLY";
-    default: return "UNKNOWN";
+    case 1:
+        return "REQUEST";
+    case 2:
+        return "REPLY";
+    case 3:
+        return "RARP_REQUEST";
+    case 4:
+        return "RARP_REPLY";
+    default:
+        return "UNKNOWN";
     }
 }
 
 static const char *spoof_result_str(enum spoof_result r)
 {
     switch (r) {
-    case SPOOF_OK:          return "ok";
-    case SPOOF_NEW_HOST:    return "new_host";
-    case SPOOF_MAC_CHANGED: return "mac_changed";
-    case SPOOF_ALERT:       return "SPOOF_ALERT";
-    case SPOOF_WHITELISTED: return "whitelisted";
-    default:                return "unknown";
+    case SPOOF_OK:
+        return "ok";
+    case SPOOF_NEW_HOST:
+        return "new_host";
+    case SPOOF_MAC_CHANGED:
+        return "mac_changed";
+    case SPOOF_ALERT:
+        return "SPOOF_ALERT";
+    case SPOOF_WHITELISTED:
+        return "whitelisted";
+    default:
+        return "unknown";
     }
 }
 
-static void print_event_text(const struct arp_event *e,
-                             enum spoof_result result)
+static void print_event_text(const struct arp_event *e, enum spoof_result result)
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -130,12 +139,9 @@ static void print_event_text(const struct arp_event *e,
            "%d.%d.%d.%d  ->  "
            "%02x:%02x:%02x:%02x:%02x:%02x  "
            "%d.%d.%d.%d",
-           timebuf, opcode_str(e->ar_op),
-           e->ar_sha[0], e->ar_sha[1], e->ar_sha[2],
-           e->ar_sha[3], e->ar_sha[4], e->ar_sha[5],
-           e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3],
-           e->ar_tha[0], e->ar_tha[1], e->ar_tha[2],
-           e->ar_tha[3], e->ar_tha[4], e->ar_tha[5],
+           timebuf, opcode_str(e->ar_op), e->ar_sha[0], e->ar_sha[1], e->ar_sha[2], e->ar_sha[3],
+           e->ar_sha[4], e->ar_sha[5], e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3],
+           e->ar_tha[0], e->ar_tha[1], e->ar_tha[2], e->ar_tha[3], e->ar_tha[4], e->ar_tha[5],
            e->ar_tip[0], e->ar_tip[1], e->ar_tip[2], e->ar_tip[3]);
 
     if (result == SPOOF_ALERT)
@@ -149,8 +155,7 @@ static void print_event_text(const struct arp_event *e,
     fflush(stdout);
 }
 
-static void print_event_json(const struct arp_event *e,
-                             enum spoof_result result)
+static void print_event_json(const struct arp_event *e, enum spoof_result result)
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -162,14 +167,10 @@ static void print_event_json(const struct arp_event *e,
            "\"target_mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\","
            "\"target_ip\":\"%d.%d.%d.%d\","
            "\"spoof_status\":\"%s\"}\n",
-           ts.tv_sec, ts.tv_nsec / 1000000,
-           opcode_str(e->ar_op),
-           e->ar_sha[0], e->ar_sha[1], e->ar_sha[2],
-           e->ar_sha[3], e->ar_sha[4], e->ar_sha[5],
-           e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3],
-           e->ar_tha[0], e->ar_tha[1], e->ar_tha[2],
-           e->ar_tha[3], e->ar_tha[4], e->ar_tha[5],
-           e->ar_tip[0], e->ar_tip[1], e->ar_tip[2], e->ar_tip[3],
+           ts.tv_sec, ts.tv_nsec / 1000000, opcode_str(e->ar_op), e->ar_sha[0], e->ar_sha[1],
+           e->ar_sha[2], e->ar_sha[3], e->ar_sha[4], e->ar_sha[5], e->ar_sip[0], e->ar_sip[1],
+           e->ar_sip[2], e->ar_sip[3], e->ar_tha[0], e->ar_tha[1], e->ar_tha[2], e->ar_tha[3],
+           e->ar_tha[4], e->ar_tha[5], e->ar_tip[0], e->ar_tip[1], e->ar_tip[2], e->ar_tip[3],
            spoof_result_str(result));
     fflush(stdout);
 }
@@ -202,8 +203,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
     if (result == SPOOF_ALERT) {
         LOG_WARN("ARP spoofing detected: IP %d.%d.%d.%d MAC changed "
                  "(flip_count >= %u)",
-                 e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3],
-                 cfg.flip_threshold);
+                 e->ar_sip[0], e->ar_sip[1], e->ar_sip[2], e->ar_sip[3], cfg.flip_threshold);
     }
 
     if (cfg.json_output)
@@ -219,26 +219,26 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 static void usage(const char *prog)
 {
     fprintf(stderr,
-        "Usage: %s [OPTIONS] -i <interface>\n"
-        "\n"
-        "ARP Monitor — Real-time ARP traffic monitoring with spoofing detection\n"
-        "\n"
-        "Options:\n"
-        "  -i, --interface <name>   Network interface to monitor (required)\n"
-        "  -v, --verbose            Enable verbose/debug output\n"
-        "  -j, --json               Output events as JSON (one per line)\n"
-        "  -t, --threshold <N>      MAC flip threshold for spoof alert (default: %d)\n"
-        "  -w, --whitelist <ip,mac> Add IP-MAC pair to whitelist (repeatable)\n"
-        "  -d, --daemon             Run as daemon (background)\n"
-        "  -l, --log-file <path>    Write logs to file instead of stderr\n"
-        "  -s, --syslog             Send logs to syslog\n"
-        "  -h, --help               Show this help message\n"
-        "\n"
-        "Examples:\n"
-        "  %s -i eth0\n"
-        "  %s -i eth0 -j -t 5\n"
-        "  %s -i eth0 -w 192.168.1.1,aa:bb:cc:dd:ee:ff -d\n",
-        prog, DEFAULT_FLIP_THRESHOLD, prog, prog, prog);
+            "Usage: %s [OPTIONS] -i <interface>\n"
+            "\n"
+            "ARP Monitor — Real-time ARP traffic monitoring with spoofing detection\n"
+            "\n"
+            "Options:\n"
+            "  -i, --interface <name>   Network interface to monitor (required)\n"
+            "  -v, --verbose            Enable verbose/debug output\n"
+            "  -j, --json               Output events as JSON (one per line)\n"
+            "  -t, --threshold <N>      MAC flip threshold for spoof alert (default: %d)\n"
+            "  -w, --whitelist <ip,mac> Add IP-MAC pair to whitelist (repeatable)\n"
+            "  -d, --daemon             Run as daemon (background)\n"
+            "  -l, --log-file <path>    Write logs to file instead of stderr\n"
+            "  -s, --syslog             Send logs to syslog\n"
+            "  -h, --help               Show this help message\n"
+            "\n"
+            "Examples:\n"
+            "  %s -i eth0\n"
+            "  %s -i eth0 -j -t 5\n"
+            "  %s -i eth0 -w 192.168.1.1,aa:bb:cc:dd:ee:ff -d\n",
+            prog, DEFAULT_FLIP_THRESHOLD, prog, prog, prog);
 }
 
 static int parse_whitelist(const char *arg, uint32_t *ip, uint8_t mac[6])
@@ -246,9 +246,8 @@ static int parse_whitelist(const char *arg, uint32_t *ip, uint8_t mac[6])
     unsigned int a, b, c, d;
     unsigned int m[6];
 
-    int ret = sscanf(arg, "%u.%u.%u.%u,%02x:%02x:%02x:%02x:%02x:%02x",
-                     &a, &b, &c, &d,
-                     &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
+    int ret = sscanf(arg, "%u.%u.%u.%u,%02x:%02x:%02x:%02x:%02x:%02x", &a, &b, &c, &d, &m[0], &m[1],
+                     &m[2], &m[3], &m[4], &m[5]);
     if (ret != 10)
         return -1;
 
@@ -271,14 +270,14 @@ static int parse_args(int argc, char **argv)
 {
     static const struct option long_opts[] = {
         {"interface", required_argument, NULL, 'i'},
-        {"verbose",   no_argument,       NULL, 'v'},
-        {"json",      no_argument,       NULL, 'j'},
+        {"verbose", no_argument, NULL, 'v'},
+        {"json", no_argument, NULL, 'j'},
         {"threshold", required_argument, NULL, 't'},
         {"whitelist", required_argument, NULL, 'w'},
-        {"daemon",    no_argument,       NULL, 'd'},
-        {"log-file",  required_argument, NULL, 'l'},
-        {"syslog",    no_argument,       NULL, 's'},
-        {"help",      no_argument,       NULL, 'h'},
+        {"daemon", no_argument, NULL, 'd'},
+        {"log-file", required_argument, NULL, 'l'},
+        {"syslog", no_argument, NULL, 's'},
+        {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0},
     };
 
@@ -309,7 +308,8 @@ static int parse_args(int argc, char **argv)
             uint32_t ip;
             uint8_t mac[6];
             if (parse_whitelist(optarg, &ip, mac) < 0) {
-                fprintf(stderr, "Invalid whitelist format: %s\n"
+                fprintf(stderr,
+                        "Invalid whitelist format: %s\n"
                         "Expected: IP,MAC (e.g., 192.168.1.1,aa:bb:cc:dd:ee:ff)\n",
                         optarg);
                 return -1;
@@ -347,8 +347,7 @@ static int parse_args(int argc, char **argv)
 
     cfg.ifindex = if_nametoindex(cfg.ifname);
     if (cfg.ifindex == 0) {
-        fprintf(stderr, "Error: interface '%s' not found: %s\n",
-                cfg.ifname, strerror(errno));
+        fprintf(stderr, "Error: interface '%s' not found: %s\n", cfg.ifname, strerror(errno));
         return -1;
     }
 
@@ -367,7 +366,7 @@ static int daemonize(void)
         return -1;
     }
     if (pid > 0)
-        _exit(0);  /* Parent exits */
+        _exit(0); /* Parent exits */
 
     if (setsid() < 0) {
         LOG_ERR("setsid() failed: %s", strerror(errno));
@@ -420,16 +419,13 @@ int main(int argc, char **argv)
     if (cfg.log_file[0] != '\0') {
         log_fp = fopen(cfg.log_file, "a");
         if (!log_fp) {
-            fprintf(stderr, "Failed to open log file '%s': %s\n",
-                    cfg.log_file, strerror(errno));
+            fprintf(stderr, "Failed to open log file '%s': %s\n", cfg.log_file, strerror(errno));
             return 1;
         }
     }
-    log_init(cfg.verbose ? LOG_LVL_DEBUG : LOG_LVL_INFO,
-             log_fp, cfg.use_syslog);
+    log_init(cfg.verbose ? LOG_LVL_DEBUG : LOG_LVL_INFO, log_fp, cfg.use_syslog);
 
-    LOG_INFO("ARP Monitor starting on interface %s (ifindex %u)",
-             cfg.ifname, cfg.ifindex);
+    LOG_INFO("ARP Monitor starting on interface %s (ifindex %u)", cfg.ifname, cfg.ifindex);
     LOG_INFO("Spoof detection threshold: %u flips", cfg.flip_threshold);
 
     /* Set up libbpf */
@@ -451,19 +447,15 @@ int main(int argc, char **argv)
     LOG_DEBUG("BPF program loaded successfully");
 
     /* Attach XDP program */
-    err = bpf_xdp_attach(cfg.ifindex,
-                          bpf_program__fd(skel->progs.arp_monitor_xdp),
-                          0, NULL);
+    err = bpf_xdp_attach(cfg.ifindex, bpf_program__fd(skel->progs.arp_monitor_xdp), 0, NULL);
     if (err) {
-        LOG_ERR("Failed to attach XDP program to %s: %s",
-                cfg.ifname, strerror(errno));
+        LOG_ERR("Failed to attach XDP program to %s: %s", cfg.ifname, strerror(errno));
         goto cleanup;
     }
     LOG_INFO("XDP program attached to %s", cfg.ifname);
 
     /* Set up ring buffer */
-    rb = ring_buffer__new(bpf_map__fd(skel->maps.rb),
-                          handle_event, NULL, NULL);
+    rb = ring_buffer__new(bpf_map__fd(skel->maps.rb), handle_event, NULL, NULL);
     if (!rb) {
         LOG_ERR("Failed to create ring buffer: %s", strerror(errno));
         err = 1;
@@ -481,9 +473,8 @@ int main(int argc, char **argv)
 
     /* Print header for text mode */
     if (!cfg.json_output && !cfg.daemon_mode) {
-        printf("%-8s %-8s %-17s  %-15s      %-17s  %-15s\n",
-               "TIME", "TYPE", "SENDER MAC", "SENDER IP",
-               "TARGET MAC", "TARGET IP");
+        printf("%-8s %-8s %-17s  %-15s      %-17s  %-15s\n", "TIME", "TYPE", "SENDER MAC",
+               "SENDER IP", "TARGET MAC", "TARGET IP");
         printf("──────── ──────── ─────────────────  "
                "───────────────  ->  ─────────────────  ───────────────\n");
     }
@@ -505,8 +496,7 @@ int main(int argc, char **argv)
 
     LOG_INFO("Shutting down (processed %lu events, %lu spoof alerts, "
              "%lu table resets)",
-             (unsigned long)detector.total_events,
-             (unsigned long)detector.spoof_alerts,
+             (unsigned long)detector.total_events, (unsigned long)detector.spoof_alerts,
              (unsigned long)detector.table_resets);
 
 cleanup:

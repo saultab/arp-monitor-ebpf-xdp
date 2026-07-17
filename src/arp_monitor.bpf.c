@@ -13,19 +13,19 @@
 #include "../include/arp_monitor.h"
 
 /* Override vmlinux.h ETH_P_ARP if not available */
-#define ETH_P_ARP_BE 0x0608  /* ETH_P_ARP (0x0806) in network byte order */
+#define ETH_P_ARP_BE 0x0608 /* ETH_P_ARP (0x0806) in network byte order */
 
 /* ARP header for Ethernet/IPv4 (fixed layout) */
 struct arp_ethhdr {
     __be16 ar_hrd;
     __be16 ar_pro;
-    __u8   ar_hln;
-    __u8   ar_pln;
+    __u8 ar_hln;
+    __u8 ar_pln;
     __be16 ar_op;
-    __u8   ar_sha[6];
-    __u8   ar_sip[4];
-    __u8   ar_tha[6];
-    __u8   ar_tip[4];
+    __u8 ar_sha[6];
+    __u8 ar_sip[4];
+    __u8 ar_tha[6];
+    __u8 ar_tip[4];
 } __attribute__((packed));
 
 /* Ring buffer for events to userspace */
@@ -50,6 +50,15 @@ struct {
     __type(value, struct arp_entry);
 } arp_table SEC(".maps");
 
+static __always_inline bool mac_offsets_equal(const __u8 *mac1, const __u8 *mac2)
+{
+#pragma unroll
+    for (int i = 0; i < 6; i++) {
+        if (mac1[i] != mac2[i])
+            return false;
+    }
+    return true;
+}
 SEC("xdp")
 int arp_monitor_xdp(struct xdp_md *ctx)
 {
@@ -106,7 +115,7 @@ int arp_monitor_xdp(struct xdp_md *ctx)
     struct arp_entry *existing = bpf_map_lookup_elem(&arp_table, &key);
     if (existing) {
         /* Check if MAC changed */
-        if (__builtin_memcmp(existing->mac, arp->ar_sha, 6) != 0) {
+        if (!mac_offsets_equal(existing->mac, arp->ar_sha)) {
             new_entry.flip_count = existing->flip_count + 1;
         } else {
             new_entry.flip_count = existing->flip_count;

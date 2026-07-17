@@ -14,25 +14,27 @@
 static int tests_run = 0;
 static int tests_passed = 0;
 
-#define TEST(name) \
-    static void name(void); \
+#define TEST(name)                                                                                 \
+    static void name(void);                                                                        \
     static void name(void)
 
-#define RUN_TEST(name) do { \
-    printf("  %-50s ", #name); \
-    tests_run++; \
-    name(); \
-    tests_passed++; \
-    printf("[PASS]\n"); \
-} while (0)
+#define RUN_TEST(name)                                                                             \
+    do {                                                                                           \
+        printf("  %-50s ", #name);                                                                 \
+        tests_run++;                                                                               \
+        name();                                                                                    \
+        tests_passed++;                                                                            \
+        printf("[PASS]\n");                                                                        \
+    } while (0)
 
-#define ASSERT_EQ(a, b) do { \
-    if ((a) != (b)) { \
-        printf("[FAIL]\n    %s:%d: expected %d, got %d\n", \
-               __FILE__, __LINE__, (int)(b), (int)(a)); \
-        return; \
-    } \
-} while (0)
+#define ASSERT_EQ(a, b)                                                                            \
+    do {                                                                                           \
+        if ((a) != (b)) {                                                                          \
+            printf("[FAIL]\n    %s:%d: expected %d, got %d\n", __FILE__, __LINE__, (int)(b),       \
+                   (int)(a));                                                                      \
+            return;                                                                                \
+        }                                                                                          \
+    } while (0)
 
 /* ── Tests ──────────────────────────────────────────────────────── */
 
@@ -42,7 +44,7 @@ TEST(test_new_host_detection)
     spoof_detector_init(&sd, 3);
 
     uint8_t mac1[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x01};
-    uint32_t ip = 0x0101A8C0;  /* 192.168.1.1 in little-endian */
+    uint32_t ip = 0x0101A8C0; /* 192.168.1.1 in little-endian */
 
     enum spoof_result r = spoof_check(&sd, ip, mac1);
     ASSERT_EQ(r, SPOOF_NEW_HOST);
@@ -78,16 +80,16 @@ TEST(test_mac_change_below_threshold)
 TEST(test_spoof_alert_at_threshold)
 {
     struct spoof_detector sd;
-    spoof_detector_init(&sd, 2);  /* Low threshold for testing */
+    spoof_detector_init(&sd, 2); /* Low threshold for testing */
 
     uint8_t mac1[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x01};
     uint8_t mac2[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x02};
     uint8_t mac3[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x03};
     uint32_t ip = 0x0101A8C0;
 
-    spoof_check(&sd, ip, mac1);  /* NEW_HOST */
-    spoof_check(&sd, ip, mac2);  /* MAC_CHANGED (flip_count=1) */
-    enum spoof_result r = spoof_check(&sd, ip, mac3);  /* ALERT (flip_count=2) */
+    spoof_check(&sd, ip, mac1);                       /* NEW_HOST */
+    spoof_check(&sd, ip, mac2);                       /* MAC_CHANGED (flip_count=1) */
+    enum spoof_result r = spoof_check(&sd, ip, mac3); /* ALERT (flip_count=2) */
     ASSERT_EQ(r, SPOOF_ALERT);
 }
 
@@ -165,7 +167,7 @@ TEST(test_spoof_alert_counter)
     uint32_t ip = 0x0101A8C0;
 
     spoof_check(&sd, ip, mac1);
-    spoof_check(&sd, ip, mac2);  /* flip_count=1 >= threshold=1 → ALERT */
+    spoof_check(&sd, ip, mac2); /* flip_count=1 >= threshold=1 → ALERT */
 
     ASSERT_EQ(sd.spoof_alerts, 1);
 }
@@ -179,7 +181,7 @@ TEST(test_table_exhaustion_triggers_reset)
 
     /* Fill the table completely */
     for (uint32_t i = 0; i < SPOOF_TABLE_SIZE; i++) {
-        uint32_t ip = 0x01000001 + i;  /* 1.0.0.1, 1.0.0.2, ... */
+        uint32_t ip = 0x01000001 + i; /* 1.0.0.1, 1.0.0.2, ... */
         spoof_check(&sd, ip, mac);
     }
     ASSERT_EQ(sd.table_resets, 0);

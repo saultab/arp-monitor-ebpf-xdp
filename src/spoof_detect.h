@@ -7,24 +7,24 @@
 #include <string.h>
 #include <time.h>
 
-#define SPOOF_TABLE_SIZE   1024
+#define SPOOF_TABLE_SIZE 1024
 #define DEFAULT_FLIP_THRESHOLD 3
 
 /* Userspace ARP entry tracking */
 struct spoof_entry {
     uint32_t ip;
-    uint8_t  mac[6];
+    uint8_t mac[6];
     uint32_t flip_count;
-    time_t   first_seen;
-    time_t   last_seen;
-    bool     in_use;
+    time_t first_seen;
+    time_t last_seen;
+    bool in_use;
 };
 
 /* Whitelist entry */
 struct whitelist_entry {
     uint32_t ip;
-    uint8_t  mac[6];
-    bool     in_use;
+    uint8_t mac[6];
+    bool in_use;
 };
 
 struct spoof_detector {
@@ -39,23 +39,20 @@ struct spoof_detector {
 
 /* Result of checking an ARP event */
 enum spoof_result {
-    SPOOF_OK = 0,         /* Normal ARP traffic */
-    SPOOF_NEW_HOST,       /* First time seeing this IP */
-    SPOOF_MAC_CHANGED,    /* MAC changed (below threshold) */
-    SPOOF_ALERT,          /* Spoofing alert (above threshold) */
-    SPOOF_WHITELISTED,    /* IP-MAC pair is whitelisted */
+    SPOOF_OK = 0,      /* Normal ARP traffic */
+    SPOOF_NEW_HOST,    /* First time seeing this IP */
+    SPOOF_MAC_CHANGED, /* MAC changed (below threshold) */
+    SPOOF_ALERT,       /* Spoofing alert (above threshold) */
+    SPOOF_WHITELISTED, /* IP-MAC pair is whitelisted */
 };
 
-static inline void spoof_detector_init(struct spoof_detector *sd,
-                                       uint32_t flip_threshold)
+static inline void spoof_detector_init(struct spoof_detector *sd, uint32_t flip_threshold)
 {
     memset(sd, 0, sizeof(*sd));
-    sd->flip_threshold = flip_threshold > 0 ? flip_threshold
-                                            : DEFAULT_FLIP_THRESHOLD;
+    sd->flip_threshold = flip_threshold > 0 ? flip_threshold : DEFAULT_FLIP_THRESHOLD;
 }
 
-static inline int spoof_add_whitelist(struct spoof_detector *sd,
-                                      uint32_t ip, const uint8_t mac[6])
+static inline int spoof_add_whitelist(struct spoof_detector *sd, uint32_t ip, const uint8_t mac[6])
 {
     if (sd->whitelist_count >= 64)
         return -1;
@@ -67,12 +64,11 @@ static inline int spoof_add_whitelist(struct spoof_detector *sd,
     return 0;
 }
 
-static inline bool spoof_is_whitelisted(const struct spoof_detector *sd,
-                                        uint32_t ip, const uint8_t mac[6])
+static inline bool spoof_is_whitelisted(const struct spoof_detector *sd, uint32_t ip,
+                                        const uint8_t mac[6])
 {
     for (int i = 0; i < sd->whitelist_count; i++) {
-        if (sd->whitelist[i].in_use &&
-            sd->whitelist[i].ip == ip &&
+        if (sd->whitelist[i].in_use && sd->whitelist[i].ip == ip &&
             memcmp(sd->whitelist[i].mac, mac, 6) == 0)
             return true;
     }
@@ -85,8 +81,7 @@ static inline uint32_t spoof_hash_ip(uint32_t ip)
     return ((ip >> 16) ^ ip) % SPOOF_TABLE_SIZE;
 }
 
-static inline struct spoof_entry *spoof_find_entry(struct spoof_detector *sd,
-                                                   uint32_t ip)
+static inline struct spoof_entry *spoof_find_entry(struct spoof_detector *sd, uint32_t ip)
 {
     uint32_t idx = spoof_hash_ip(ip);
     /* Linear probing */
@@ -100,8 +95,7 @@ static inline struct spoof_entry *spoof_find_entry(struct spoof_detector *sd,
     return NULL;
 }
 
-static inline struct spoof_entry *spoof_get_or_create(struct spoof_detector *sd,
-                                                      uint32_t ip)
+static inline struct spoof_entry *spoof_get_or_create(struct spoof_detector *sd, uint32_t ip)
 {
     uint32_t idx = spoof_hash_ip(ip);
     struct spoof_entry *first_free = NULL;
@@ -136,8 +130,7 @@ static inline struct spoof_entry *spoof_get_or_create(struct spoof_detector *sd,
     return first_free;
 }
 
-static inline enum spoof_result spoof_check(struct spoof_detector *sd,
-                                            uint32_t ip,
+static inline enum spoof_result spoof_check(struct spoof_detector *sd, uint32_t ip,
                                             const uint8_t mac[6])
 {
     sd->total_events++;

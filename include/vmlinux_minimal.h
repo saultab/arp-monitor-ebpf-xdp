@@ -28,7 +28,7 @@ typedef __u32 __wsum;
 struct ethhdr {
     unsigned char h_dest[ETH_ALEN];
     unsigned char h_source[ETH_ALEN];
-    __be16        h_proto;
+    __be16 h_proto;
 } __attribute__((packed));
 
 /* XDP metadata (from linux/bpf.h) */
@@ -87,10 +87,10 @@ enum bpf_map_type {
 
 /* BPF map update flags */
 enum {
-    BPF_ANY     = 0,
+    BPF_ANY = 0,
     BPF_NOEXIST = 1,
-    BPF_EXIST   = 2,
-    BPF_F_LOCK  = 4,
+    BPF_EXIST = 2,
+    BPF_F_LOCK = 4,
 };
 
 #endif /* __VMLINUX_MINIMAL_H__ */
