@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  BPFTOOL_VERSION: v7.5.0
-
 jobs:
   build:
     strategy:
@@ -32,12 +29,12 @@ jobs:
             cppcheck \
             gcc make pkg-config curl
 
-      - name: Install bpftool (static binary, kernel-independent)
+      - name: Build bpftool from submodule
         run: |
-          curl -L -o bpftool.tar.gz \
-            "https://github.com/libbpf/bpftool/releases/download/${BPFTOOL_VERSION}/bpftool-${BPFTOOL_VERSION}-amd64.tar.gz"
-          tar xzf bpftool.tar.gz
-          sudo install -m 0755 bpftool /usr/local/bin/bpftool
+          cd bpftool/src
+          make
+          sudo make install
+          cd ../..
           bpftool version
 
       - name: Check formatting
