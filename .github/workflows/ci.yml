@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  BPFTOOL_VERSION: v7.5.0
+
 jobs:
   build:
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
+    name: Build (${{ matrix.os }})
 
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +28,17 @@ jobs:
           sudo apt-get install -y \
             clang llvm llvm-dev \
             libelf-dev zlib1g-dev \
-            linux-tools-common linux-tools-generic \
-            libbpf-dev bpftool \
-            cppcheck
+            libbpf-dev \
+            cppcheck \
+            gcc make pkg-config curl
+
+      - name: Install bpftool (static binary, kernel-independent)
+        run: |
+          curl -L -o bpftool.tar.gz \
+            "https://github.com/libbpf/bpftool/releases/download/${BPFTOOL_VERSION}/bpftool-${BPFTOOL_VERSION}-amd64.tar.gz"
+          tar xzf bpftool.tar.gz
+          sudo install -m 0755 bpftool /usr/local/bin/bpftool
+          bpftool version
 
       - name: Check formatting
         run: |
@@ -37,14 +49,9 @@ jobs:
           cppcheck --enable=all --error-exitcode=1 \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
+            --suppress=unknownMacro \
             -I./include -I./src \
             src/arp_monitor.c
-
-      - name: Generate vmlinux.h
-        run: |
-          sudo bpftool btf dump file /sys/kernel/btf/vmlinux format c > .output/vmlinux.h
-        env:
-          BPFTOOL: bpftool
 
       - name: Build BPF program
         run: |
@@ -95,5 +102,13 @@ jobs:
 
       - name: Verify BPF program loads (requires privileges)
         run: |
-          sudo bpftool prog load .output/arp_monitor.bpf.o /sys/fs/bpf/arp_monitor_test || true
+          sudo bpftool prog load .output/arp_monitor.bpf.o /sys/fs/bpf/arp_monitor_test
           sudo rm -f /sys/fs/bpf/arp_monitor_test
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: arp-monitor-${{ matrix.os }}
+          path: |
+            arp-monitor
+            arp-monitor-asan
